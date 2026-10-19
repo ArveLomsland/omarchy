@@ -73,9 +73,9 @@ while IFS='|' read -r name plugin; do
   fi
 done <<<"$panels"
 
-# The power widget intentionally disappears on desktops and VMs without a
-# battery. Exercise it on laptops, and verify that hardware-less sessions take
-# the supported no-panel path instead of treating that as a shell failure.
+# The power widget is available when UPower reports a system battery or
+# supported peripheral batteries. Verify hardware-less sessions take the
+# supported no-panel path instead of treating that as a shell failure.
 if upower -e | grep '/battery_' >/dev/null; then
   if ! (trap - EXIT; open_and_capture_panel "power" "omarchy.power"); then
     status=1
@@ -83,7 +83,7 @@ if upower -e | grep '/battery_' >/dev/null; then
     wait_until "power failed panel is dismissed" 15 layer_absent "omarchy-keyboard-panel"
   fi
 else
-  pass "power panel is hidden without battery hardware"
+  pass "power panel is hidden without battery devices"
   screenshot "success-panel-power-unavailable"
 fi
 
