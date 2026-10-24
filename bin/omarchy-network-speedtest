@@ -65,6 +65,7 @@ cleanup() {
   done
 }
 trap cleanup EXIT
+trap 'exit 143' TERM INT
 
 # Round-robin across the returned URLs so we spread load across Netflix OCA nodes.
 traffic_worker() {
@@ -72,13 +73,14 @@ traffic_worker() {
   local url_count=${#urls[@]}
   local idx=$RANDOM
   if [[ $direction == "down" ]]; then
-    while true; do
+    # Keep workers alive only while their parent speedtest process exists.
+    while kill -0 $$ 2>/dev/null; do
       url=${urls[$((idx % url_count))]}
       curl -fsS -o /dev/null "$url" 2>/dev/null || return
       idx=$((idx + 1))
     done
   else
-    while true; do
+    while kill -0 $$ 2>/dev/null; do
       url=${urls[$((idx % url_count))]}
       dd if=/dev/zero bs=1M count=64 2>/dev/null | curl -fsS -o /dev/null -X POST --data-binary @- "$url" 2>/dev/null || return
       idx=$((idx + 1))
